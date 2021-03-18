@@ -5,6 +5,6 @@ local:
       ansible_connection: local
 guest:
   hosts:
-    <%= data[:host] %>:
+    <%= config.vm %>:
       ansible_user: vagrant
-      ansible_ssh_common_args: '-F <%= data[:ssh_config] %>'
+      ansible_ssh_common_args: '-F <%= config.ssh %>'

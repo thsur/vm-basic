@@ -20,6 +20,7 @@
 require 'yaml'
 require 'pp'
 require 'erb'
+require 'ostruct'
 
 # Gems
 # 
@@ -50,7 +51,7 @@ end
 # - https://www.stuartellis.name/articles/erb/
 # - https://www.rubyguides.com/2018/11/ruby-erb-haml-slim/
 # - https://blog.appsignal.com/2019/01/08/ruby-magic-bindings-and-lexical-scope.html
-def write_template(template, target, data)
+def write_template(template, target, config)
 
   File.write(
 
@@ -92,17 +93,24 @@ end
 # Settings
 # 
 
-$vm        = get_vagrant_config[:hostname]
-$vm_ssh    = File.join(__dir__, 'vagrant/.ssh/config')
-$inventory = File.join(__dir__, 'ansible/inventory/inventory.yml')
-$roles_dir = File.join(__dir__, 'ansible/roles')
+# Get some base config structure.
+# 
+# For more options on how to do this, cf.:
+# - https://www.cloudbees.com/blog/creating-configuration-objects-in-ruby/
+
+config = OpenStruct.new
+
+config.vm        = get_vagrant_config[:hostname]
+config.ssh       = File.join(__dir__, 'vagrant/.ssh/config')
+config.inventory = File.join(__dir__, 'ansible/inventory/inventory.yml')
+config.roles     = File.join(__dir__, 'ansible/roles')
 
 #
-# Setup
+# Bootstrap
 # 
 
 generate_ansible_files do |template, target|
-  write_template(template, target, {host: $vm, ssh_config: $vm_ssh, ansible_roles_dir: $roles_dir, ansible_inventory: $inventory})
+  write_template(template, target, config)
 end
 
 # We do our own default help screen when no task was given.
@@ -203,18 +211,18 @@ namespace :test do
   
   desc 'Try to connect to VM via ssh & custom config file.'
   task :ssh do
-    sh "ssh -F #{$vm_ssh} #{$vm}"
+    sh "ssh -F #{config.ssh} #{config.vm}"
   end
 
   desc 'Try to ping VM with Ansible, so we know Ansible is able to connect.'
   task :ping do
-    sh "ansible #{$vm} -i #{$inventory} -m ping"
+    sh "ansible #{config.vm} -i #{config.inventory} -m ping"
   end
 
   desc 'Whether or not memcached is running.'
   task :memcached do
-    sh "ssh -F #{$vm_ssh} #{$vm} 'echo stats | nc 127.0.0.1 11211'"
-    sh "ssh -F #{$vm_ssh} #{$vm} 'php -i | grep memcached'"
+    sh "ssh -F #{config.ssh} #{config.vm} 'echo stats | nc 127.0.0.1 11211'"
+    sh "ssh -F #{config.ssh} #{config.vm} 'php -i | grep memcached'"
   end
 end
 

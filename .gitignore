@@ -6,6 +6,7 @@ tmp/
 /ansible/roles/contrib
 /ansible/inventory/*.yml
 /ansible/inventory/*.ini
+/ansible/plays/*/ansible.cfg
 
 *.retry
 

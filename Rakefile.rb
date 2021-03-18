@@ -41,22 +41,51 @@ def get_vagrant_config
   YAML.load_file('./vagrant/config.yml').symbolize_keys
 end
 
-# Write Ansible inventory file.
+# Write ERB template files with given data to given destination.
+# 
+# Used here to write Ansible inventory & config files.
 # 
 # Cf.:
 # - https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html
 # - https://www.stuartellis.name/articles/erb/
 # - https://www.rubyguides.com/2018/11/ruby-erb-haml-slim/
 # - https://blog.appsignal.com/2019/01/08/ruby-magic-bindings-and-lexical-scope.html
-def write_ansible_inventory(data)
-
-  return if (File.exists?(data[:file]) && !data[:force])
+def write_template(template, target, data)
 
   File.write(
 
-    data[:file],
-    ERB.new(File.read('templates/inventory.yml.erb')).result(binding)
+    target,
+    ERB.new(File.read(template)).result(binding)
   )
+end
+
+# Whether or not to generate, or update, Ansible inventory & confg files.
+def generate_ansible_files
+  
+  # Helper to decide whether or not to generate/update a given file
+  update = Proc.new do |fn, mtime|
+    !(File.exists?(fn) && File.stat(fn).mtime >= mtime)
+  end
+
+  Dir.glob('./templates/ansible.*').each do |template|
+
+    # Get a template's last modified date
+    source_mtime = File.stat(template).mtime 
+
+    # Get a destination's potential file name & path 
+    target_file = File.basename(template).split('.').slice(1...-1).join('.') 
+    target_path = target_file.start_with?('inventory') ? 'inventory' : 'plays/*'
+
+    # Walk destination path(s)
+    Dir.glob("./ansible/#{target_path}/").each do |path|
+
+      # Build a potential real path
+      fn = File.join(File.expand_path(path), target_file)    
+
+      # Yield source (template file) & target if the target needs to be generated/updated
+      yield template, fn if update.call(fn, source_mtime) && block_given?
+    end 
+  end
 end
 
 # 
@@ -64,13 +93,17 @@ end
 # 
 
 $vm        = get_vagrant_config[:hostname]
-$inventory = 'ansible/inventory/inventory.yml'
+$vm_ssh    = File.join(__dir__, 'vagrant/.ssh/config')
+$inventory = File.join(__dir__, 'ansible/inventory/inventory.yml')
+$roles_dir = File.join(__dir__, 'ansible/roles')
 
 #
 # Setup
 # 
 
-write_ansible_inventory(host: $vm, file: $inventory)
+generate_ansible_files do |template, target|
+  write_template(template, target, {host: $vm, ssh_config: $vm_ssh, ansible_roles_dir: $roles_dir, ansible_inventory: $inventory})
+end
 
 # We do our own default help screen when no task was given.
 # To get at the task descriptions, however, we need to tell Rake to record them before we load the task definitions in.
@@ -142,15 +175,19 @@ namespace :ansible do
 
   desc 'Provision dev machine.'
   task :provision do
-    cd('ansible/provision') do
-      sh "ansible-playbook -v -i #{$inventory} playbook.yml"
+    cd('ansible/plays/provision') do
+      begin
+        sh "ansible-playbook -v playbook.yml"
+      rescue RuntimeError; end
     end
   end
 
   desc 'Perform a provision dry run.'
   task :dry do
-    cd('ansible/provision') do
-      sh "ansible-playbook --check -v -i #{$inventory} playbook.yml"
+    cd('ansible/plays/provision') do
+      begin
+        sh "ansible-playbook --check -v playbook.yml"
+      rescue RuntimeError; end  
     end
   end
 
@@ -166,7 +203,7 @@ namespace :test do
   
   desc 'Try to connect to VM via ssh & custom config file.'
   task :ssh do
-    sh "ssh -F vagrant/.ssh/config #{$vm}"
+    sh "ssh -F #{$vm_ssh} #{$vm}"
   end
 
   desc 'Try to ping VM with Ansible, so we know Ansible is able to connect.'
@@ -176,21 +213,8 @@ namespace :test do
 
   desc 'Whether or not memcached is running.'
   task :memcached do
-    sh "ssh -F vagrant/.ssh/config #{$vm} 'echo stats | nc 127.0.0.1 11211'"
-    sh "ssh -F vagrant/.ssh/config #{$vm} 'php -i | grep memcached'"
-  end
-end
-
-namespace :core do
-
-  desc 'Install dependencies so can operate properly.'
-  task :install_dependencies do
-    sh "bundle install"
-  end
-
-  desc 'Update Ansible inventory.'
-  task :update_inventory do
-    write_ansible_inventory(host: $vm, file: $inventory, force: true)
+    sh "ssh -F #{$vm_ssh} #{$vm} 'echo stats | nc 127.0.0.1 11211'"
+    sh "ssh -F #{$vm_ssh} #{$vm} 'php -i | grep memcached'"
   end
 end
 

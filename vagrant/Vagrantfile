@@ -3,15 +3,34 @@
 # 
 
 require 'yaml'
+require 'pp'
 
-# Load a config file, and turn its
-# first-level keys into symbols.
+# Load a config file.
 def load_config(file)
-  YAML.load_file(file).map { |k, v| [k.to_sym, v] }.to_h if file
+  YAML.load_file(file) if File.exists?(file)
 end
 
-$vagrant = load_config('config.yml')
-abort 'No config found.' if !$vagrant
+# Turn first-level keys of the given hash into symbols.
+def symbolize(hash)
+  hash.map { |k, v| [k.to_sym, v] }.to_h
+end
+
+# Get core & additional user config 
+def get_config(files)
+
+  core = load_config(files[:core]) || {}
+  user = load_config(files[:user]) || {}
+
+  return core if core.empty?
+
+  user = user.fetch('vagrant', {})
+  core = user.is_a?(Hash) ? core.merge(user) : core 
+
+  symbolize(core)
+end
+
+$vagrant = get_config(core: 'config.yml', user: '../config/user.config.yml')
+abort 'No sufficient configuration.' if $vagrant.empty?
 
 #
 # Vagrant

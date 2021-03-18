@@ -1,9 +1,24 @@
 ---
+
 #######################################################################################
 #                                                                                     #
-# Project                                                                             #
+# Vagrant                                                                             #
 #                                                                                     #  
 #######################################################################################
+
+vagrant: 
+  
+  # Folders to sync into guest machine
+  
+  # sync_folders:
+  #   - 
+  #     from: ../../src
+  #     to: /var/www/my-site
+  #     args:
+  #       id: src
+  #       owner: vagrant
+  #       group: www-data
+  #       mount_options: ["dmode=775,fmode=664"]
 
 # The hostname of the VM and its aliases. Both are getting written to your host machine's
 # /etc/hosts file.
@@ -18,40 +33,3 @@ aliases:
 # Features                                                                            #
 #                                                                                     #  
 #######################################################################################
-
-
-#######################################################################################
-#                                                                                     #
-# Only edit below this line if you know what you're doing.                            #
-#                                                                                     #  
-#######################################################################################
-
-#######################################################################################
-#                                                                                     #
-# Vagrant                                                                             #
-#                                                                                     #  
-#######################################################################################
-
-ip: 0.0.0.0 # Auto-configure a guest's ip. Requires www-data-auto_network.
-            # Change to some address from the private address space to give it a fixed ip (like '192.168.0.99').
-
-# If you change or update the box, make sure to delete any previous entries in your know_hosts file, too.
-# Otherwise, you won't be able to connect via ssh. 
-# You can always test your ssh connection manually by running:
-# $ ssh vagrant@your_host 
-box:
-  # type: ubuntu/trusty64 
-  type: bento/ubuntu-16.04
-  memory: 2048
-  cpus: 1
-
-# Folders to sync into guest machine
-sync_folders:
-  - 
-    from: ../../src
-    to: /var/www/{{ hostname }}
-    args:
-      id: src
-      owner: vagrant
-      group: www-data
-      mount_options: ["dmode=775,fmode=664"]

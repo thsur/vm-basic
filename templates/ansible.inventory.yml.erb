@@ -7,4 +7,4 @@ guest:
   hosts:
     <%= data[:host] %>:
       ansible_user: vagrant
-      ansible_ssh_common_args: '-F vagrant/.ssh/config'
+      ansible_ssh_common_args: '-F <%= data[:ssh_config] %>'

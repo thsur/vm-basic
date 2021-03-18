@@ -1,0 +1,25 @@
+
+# Remove default webserver dir set up by geerlingguy.apache
+
+- file:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - /var/www/html
+
+# Install default packages
+
+- name: Install Nano
+  apt:
+    name: nano
+    state: present
+
+- name: Install Silver Searcher (ag)
+  apt:
+    name: silversearcher-ag
+    state: present
+
+- name: Install Git
+  apt:
+    name: git
+    state: present

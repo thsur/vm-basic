@@ -1,0 +1,59 @@
+
+# Set environment variables
+
+- name: Set environment variables
+  lineinfile:
+    name: /etc/environment
+    state: present
+    line: 'DEV_MACHINE="true"'        
+
+# Make bin dir
+
+- name: Create ~/bin
+  file:
+    path: ~/bin
+    state: directory
+    mode: 0755
+  become: true
+  become_user: "{{ vm_user }}"
+
+# Install additional PPAs
+
+- name: Install extra apt PPAs
+  apt_repository: 
+    repo: "{{ item }}"
+  with_items: "{{ apt_extra_ppa }}"
+  when: apt_extra_ppa | length
+
+# Install default packages
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 86400 # twenty-four hours
+
+- name: Install Nano
+  apt:
+    name: nano
+    state: present
+
+- name: Install Silver Searcher (ag)
+  apt:
+    name: silversearcher-ag
+    state: present
+
+- name: Install Git
+  apt:
+    name: git
+    state: present
+
+# Install extra packages
+
+- name: Install extra apt packages
+  apt: "name={{ apt_extra_packages | list }} state=present"
+  when: apt_extra_packages | length
+
+# Generate language file
+
+- name: Install language(s)
+  command: "locale-gen de_DE.UTF-8"

@@ -1,0 +1,22 @@
+
+tmp/
+
+# Ansible
+
+/ansible/roles/contrib
+/ansible/inventory/*.yml
+/ansible/inventory/*.ini
+
+*.retry
+
+# Vagrant
+
+vagrant/.vagrant/
+vagrant/.ssh/
+
+# Misc
+
+.DS_Store
+
+*.sublime-project
+*.sublime-workspace

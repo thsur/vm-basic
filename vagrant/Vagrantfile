@@ -1,0 +1,138 @@
+#
+# Setup
+# 
+
+require 'yaml'
+
+# Load a config file, and turn its
+# first-level keys into symbols.
+def load_config(file)
+  YAML.load_file(file).map { |k, v| [k.to_sym, v] }.to_h if file
+end
+
+$vagrant = load_config('config.yml')
+abort 'No config found.' if !$vagrant
+
+#
+# Vagrant
+# 
+
+Vagrant.require_version '>= 2.2'
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure('2') do |config|
+  
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+
+  # The hostname the machine should have.
+  config.vm.hostname = $vagrant[:hostname]
+
+  # The name the machine should have. 
+  # Cf. http://stackoverflow.com/a/17864388/100134
+  # Cf. https://stackoverflow.com/a/20431791
+  config.vm.define $vagrant[:hostname]
+
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://atlas.hashicorp.com/search.
+  config.vm.box = $vagrant[:box]['type']
+
+  # Package cache
+  # Cf. https://github.com/fgrehm/vagrant-cachier
+  if Vagrant.has_plugin?("vagrant-cachier")
+    # Configure cached packages to be shared between instances of the same base box.
+    config.cache.scope = :box
+  end
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine. In the example below,
+  # accessing "localhost:8080" will access port 80 on the guest machine.
+  # config.vm.network "forwarded_port", guest: 80, host: 8080
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  if $vagrant[:ip] != '0.0.0.0'
+    config.vm.network :private_network, ip: $vagrant[:ip]
+  else
+    abort 'Plugin "vagrant-auto_network" not found, but required to auto-configure guest IP.' unless Vagrant.has_plugin?('vagrant-auto_network')
+    config.vm.network :private_network, ip: $vagrant[:ip], auto_network: true
+  end
+
+  # Update /etc/hosts to reflect all our VM's hosts besides $vagrant[:hostname].
+  if $vagrant[:aliases] 
+    abort 'Plugin "vagrant-hostsupdater" not found, but required to auto-configure /etc/hosts.' unless Vagrant.has_plugin?('vagrant-hostsupdater')
+    config.hostsupdater.aliases           = $vagrant[:aliases]
+    config.hostsupdater.remove_on_suspend = false
+  end
+
+  # Let Vagrant automatically insert a keypair to use for SSH.
+  # Cf. https://www.vagrantup.com/docs/vagrantfile/ssh_settings
+  config.ssh.insert_key = true
+
+  # Create a SSH config file after everything's up & running.
+  # 
+  # The script called here in turn calls vagrant ssh-config,
+  # which takes its time to execute, so we call it only after
+  # vagrant up.
+  # 
+  # Cf.:
+  # - https://www.vagrantup.com/docs/triggers
+  # - https://www.vagrantup.com/docs/triggers/configuration
+  config.trigger.after :up do |trigger|
+    trigger.name = "Creating SSH config file"
+    trigger.run  = {path: './bin/create_ssh_config_file.rb'}
+  end
+  
+  # Do not share this folder with guest machine.
+  # Cf. https://superuser.com/questions/756758/is-it-possible-to-disable-default-vagrant-synced-folder
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+
+  # Share folders.
+  # 
+  # See:
+  # 
+  # - https://www.drupal.org/node/2485869
+  # - https://www.vagrantup.com/docs/synced-folders/nfs.html
+  # - http://blog.netgusto.com/solving-web-file-permissions-problem-once-and-for-all/
+  # - http://bindfs.org/
+  # - https://www.systutorials.com/docs/linux/man/1-bindfs/#lbAF
+  # - https://github.com/gael-ian/vagrant-bindfs
+  if $vagrant[:sync_folders] 
+
+    abort 'Plugin "vagrant-bindfs" not found, but required to sync folders.' unless Vagrant.has_plugin?('vagrant-bindfs')
+
+    config.nfs.map_uid = Process.uid
+    config.nfs.map_gid = Process.gid
+
+    $vagrant[:sync_folders].each do |i| 
+
+      sync_as = Digest::MD5.hexdigest(i['to'])
+
+      config.vm.synced_folder i['from'], "/home/vagrant/nfs/#{sync_as}", id: i['args']['id'], type: :nfs
+      config.bindfs.bind_folder "/home/vagrant/nfs/#{sync_as}", i['to'], after: :provision, force_user: i['args']['owner'], force_group: i['args']['group'], perms: "u=rwX:g=rwD:o=rD"
+    end
+  end
+
+  # Configure VirtualBox provider
+  # Cf. https://www.vagrantup.com/docs/virtualbox/configuration.html
+  # Cf. https://www.virtualbox.org/manual/ch08.html#vboxmanage-modifyvm
+  config.vm.provider 'virtualbox' do |v|
+
+    v.memory = $vagrant[:box]['memory']
+    v.cpus   = $vagrant[:box]['cpus']
+    v.name   = $vagrant[:hostname]
+
+    v.linked_clone = true
+    
+    v.customize ['modifyvm', :id, '--cpuexecutioncap', '50']
+    v.customize ['modifyvm', :id, '--natdnshostresolver1', 'on']
+    v.customize ['modifyvm', :id, '--ioapic', 'on']
+
+    # Prevent VirtualBox from interfering with host audio stack
+    # See https://forums.virtualbox.org/viewtopic.php?f=8&t=90027
+    v.customize ["modifyvm", :id, "--audio", "none"]
+  end
+end

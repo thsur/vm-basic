@@ -6,6 +6,6 @@ ip: 0.0.0.0  # Auto-configure a guest's ip. Requires www-data-auto_network.
              # Change to some address from the private address space to give it a fixed ip (like '192.168.0.99').
 
 box:
-  type: bento/ubuntu-16.04 # Cf. https://www.vagrantup.com/docs/boxes#official-boxes
+  type: bento/ubuntu-20.10 # Cf. https://www.vagrantup.com/docs/boxes#official-boxes
   memory: 2048
   cpus: 1

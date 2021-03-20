@@ -145,7 +145,7 @@ namespace :vm do
   end
 
   desc 'Pause dev machine.'
-  task :halt do
+  task :suspend do
     cd('vagrant') do
       sh 'vagrant suspend'
     end
@@ -236,11 +236,15 @@ task :default do
   desc  = {}
 
   puts
-  puts 'VM'
+  puts '=' * 40
+  puts '|' << ' ' * 38 << '|'
+  puts '|' << ' ' * 16 << 'DevOps' << ' ' * 16 << '|'
+  puts '|' << ' ' * 38 << '|'
+  puts '=' * 40
   puts
   puts 'Usage:'
   puts 'rake TASK, e.g. rake ' + tasks[0].name
-  puts
+  puts 
 
   tasks.each do |t|
     
@@ -257,7 +261,6 @@ task :default do
 
     title = "* #{ns.upcase} *"
 
-    puts
     puts "-" * title.length
     puts title
     puts "-" * title.length

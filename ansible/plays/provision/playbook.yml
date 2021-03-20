@@ -34,8 +34,8 @@
         name: common
     - include_role:
         name: geerlingguy.firewall
-    - include_role:
-        name: geerlingguy.pip
+    # - include_role:
+    #     name: geerlingguy.pip
     # - include_role:
     #     name: geerlingguy.memcached
     # - include_role:

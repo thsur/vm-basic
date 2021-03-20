@@ -25,35 +25,33 @@
   with_items: "{{ apt_extra_ppa }}"
   when: apt_extra_ppa | length
 
-# Install default packages
+# Keep apt packages up to date
 
 - name: Update apt cache
   apt:
     update_cache: yes
     cache_valid_time: 86400 # twenty-four hours
 
-- name: Install Nano
+- name: Upgrade apt packages
   apt:
-    name: nano
-    state: present
-
-- name: Install Silver Searcher (ag)
-  apt:
-    name: silversearcher-ag
-    state: present
-
-- name: Install Git
-  apt:
-    name: git
-    state: present
+    upgrade: safe
 
 # Install extra packages
 
 - name: Install extra apt packages
-  apt: "name={{ apt_extra_packages | list }} state=present"
+  apt: 
+    pkg: "{{ apt_extra_packages }}"
   when: apt_extra_packages | length
+
+# Install extra Python packages
+
+- name: Install extra pip packages
+  pip:
+    name: "{{ pip_extra_packages }}"
 
 # Generate language file
 
-- name: Install language(s)
-  command: "locale-gen de_DE.UTF-8"
+- name: Install locale(s)
+  locale_gen:
+    name: de_DE.UTF-8
+    state: present

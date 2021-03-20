@@ -1,4 +1,7 @@
 
+/user/*
+!/user/.gitkeep
+
 tmp/
 
 # Ansible

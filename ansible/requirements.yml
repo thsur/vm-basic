@@ -7,7 +7,6 @@
 - src: geerlingguy.apache-php-fpm
 - src: geerlingguy.composer
 - src: geerlingguy.firewall
-- src: geerlingguy.pip
 - src: geerlingguy.mysql
 - src: geerlingguy.mailhog
 - src: weareinteractive.environment

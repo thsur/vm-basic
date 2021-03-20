@@ -36,15 +36,22 @@ composer_global_packages:
 #
 # apt
 # 
-apt_extra_ppa:
-  # Ubuntu 14 comes with Apache 2.4.7, but we need at least Apache 2.4.9 
-  # for PHP-FPM with SetHandler (see below) to work, so we need to install 
-  # an extra PPA. 
-  - "ppa:ondrej/apache2"
-
+apt_extra_ppa: []
+  
 apt_extra_packages:
+  - silversearcher-ag
+  - python3-pip
+  - aptitude
+  - apache2
   - sqlite
   - unzip
+
+#
+# Python packages
+# 
+pip_extra_packages:
+  - virtualenv
+  - pyopenssl
 
 #
 # MySQL
@@ -64,12 +71,6 @@ mysql_root_password: root
 mysql_slow_query_log_enabled: true
 mysql_slow_query_time: 2
 mysql_wait_timeout: 300
-
-#
-# Python packages
-# 
-pip_install_packages:
-  - pyopenssl
 
 #
 # Apache

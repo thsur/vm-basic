@@ -9,3 +9,5 @@ box:
   type: bento/ubuntu-20.10 # Cf. https://www.vagrantup.com/docs/boxes#official-boxes
   memory: 2048
   cpus: 1
+
+share_default_folder: ../user/bin 

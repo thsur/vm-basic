@@ -9,9 +9,7 @@
 # /etc/hosts file.
 # 
 # Please make sure to always provide the hostname *without* a "www." prefixing it.
-aliases: 
-  - www.baufoerderer-v3.test
-  - xhprof.baufoerderer-v3.test
+aliases: []
 
 #######################################################################################
 #                                                                                     #

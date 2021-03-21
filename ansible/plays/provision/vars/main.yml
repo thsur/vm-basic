@@ -42,6 +42,7 @@ apt_extra_packages:
   - silversearcher-ag
   - python3-pip
   - aptitude
+  - anacron
   - apache2
   - sqlite
   - unzip

@@ -1,6 +1,11 @@
 
-/user/*
-!/user/.gitkeep
+/user/bin/*
+/user/plays/*
+/user/config/*
+
+!/user/bin/.gitkeep
+!/user/plays/.gitkeep
+!/user/config/.gitkeep
 
 tmp/
 
